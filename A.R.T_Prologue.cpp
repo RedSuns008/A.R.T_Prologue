@@ -35,7 +35,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
 
     window.width = GetSystemMetrics(SM_CXSCREEN);
     window.height = GetSystemMetrics(SM_CYSCREEN);
-  
+    HDC hdcScreen = GetDC(window.hWnd);
+    window.context = CreateCompatibleDC(hdcScreen);
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -86,8 +87,8 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ARTPROLOGUE));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_ARTPROLOGUE);
+    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+3);
+    wcex.lpszMenuName   = NULL;
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
@@ -115,8 +116,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    {
       return FALSE;
    }
-   HDC hdcScreen = GetDC(window.hWnd);
-   window.context = CreateCompatibleDC(hdcScreen);
 
    ShowWindow(window.hWnd, nCmdShow);
    UpdateWindow(window.hWnd);
@@ -138,7 +137,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // TODO
 void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
 {
-    HDC hdcMem = CreateCompatibleDC(hdc);
+    HDC hdcMem = CreateCompatibleDC(window.context);
     HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, hBitmap);
 
     BITMAP bm;
@@ -150,7 +149,7 @@ void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
 
     SelectObject(hdcMem, hOldBitmap);
     DeleteDC(hdcMem);
-}
+}   
 
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -177,10 +176,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
+            window.context = BeginPaint(window.hWnd, &ps); //TODO
             window.device_context = BeginPaint(window.hWnd, &ps);
-            //RECT clientRect;
-            //GetClientRect(hWnd, &clientRect);
-            window.device_context = BeginPaint(hWnd, &ps);
             DrawBackground(window.context, window.width, window.height, BackGround_bmp);
             BitBlt(window.device_context,0, 0, window.width, window.height, window.context,0, 0, SRCCOPY);
             Exit.Show();
