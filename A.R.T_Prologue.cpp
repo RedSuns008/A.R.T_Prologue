@@ -33,10 +33,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
 
     // TODO: Place code here.
 
-    window.width = GetSystemMetrics(SM_CXSCREEN);
-    window.height = GetSystemMetrics(SM_CYSCREEN);
     HDC hdcScreen = GetDC(window.hWnd);
     window.context = CreateCompatibleDC(hdcScreen);
+    window.width = GetSystemMetrics(SM_CXSCREEN);
+    window.height = GetSystemMetrics(SM_CYSCREEN);
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -125,7 +125,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-//
+
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
 //  PURPOSE: Processes messages for the main window.
@@ -133,8 +133,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_COMMAND  - process the application menu
 //  WM_PAINT    - Paint the main window
 //  WM_DESTROY  - post a quit message and return
-//
-//
 
 // TODO
 void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
@@ -163,13 +161,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         Exit.StartDragging();
         if (Exit.isDragging) {
             SetCapture(hWnd); // Захватываем мышь
-            // Запоминаем текущую позицию кнопки
-            lastButtonRect = {
-                (LONG)Exit.x,
-                (LONG)Exit.y,
-                (LONG)(Exit.x + Exit.width),
-                (LONG)(Exit.y + Exit.height)
-            };
+            
+            lastButtonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)}; // Запоминаем текущую позицию кнопки
         }
         break;
 
@@ -180,36 +173,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         Mouse.x = (float)pt.x;
         Mouse.y = (float)pt.y;
 
-        // Обновляем состояние наведения
-        bool wasHovered = Exit.isHovered;
+      
+        bool wasHovered = Exit.isHovered;    // Обновляем состояние наведения
         Exit.isHovered = Exit.CheckCollisionMouse();
 
-        // Обновляем перетаскивание если активно
-        if (Exit.isDragging) {
-            // Сначала инвалидируем старую область
-            InvalidateRect(hWnd, &lastButtonRect, FALSE);
+        
+        if (Exit.isDragging) { // Обновляем перетаскивание если активно
+         
+            InvalidateRect(hWnd, &lastButtonRect, FALSE);    // Сначала инвалидируем старую область
 
             Exit.UpdateDragging();
 
-            // Обновляем область для перерисовки
-            lastButtonRect = {
-                (LONG)Exit.x,
-                (LONG)Exit.y,
-                (LONG)(Exit.x + Exit.width),
-                (LONG)(Exit.y + Exit.height)
-            };
+            
+            lastButtonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};// Обновляем область для перерисовки
 
             // Инвалидируем новую область
             InvalidateRect(hWnd, &lastButtonRect, FALSE);
         }
-        // Если состояние наведения изменилось, перерисовываем кнопку
-        else if (wasHovered != Exit.isHovered) {
-            RECT buttonRect = {
-                (LONG)Exit.x,
-                (LONG)Exit.y,
-                (LONG)(Exit.x + Exit.width),
-                (LONG)(Exit.y + Exit.height)
-            };
+        
+        else if (wasHovered != Exit.isHovered) {     // Если состояние наведения изменилось, перерисовываем кнопку
+            RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
             InvalidateRect(hWnd, &buttonRect, FALSE);
         }
         break;
@@ -221,12 +204,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             ReleaseCapture(); // Освобождаем захват мыши
 
             // Перерисовываем область кнопки
-            RECT buttonRect = {
-                (LONG)Exit.x,
-                (LONG)Exit.y,
-                (LONG)(Exit.x + Exit.width),
-                (LONG)(Exit.y + Exit.height)
-            };
+            RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
+
             InvalidateRect(hWnd, &buttonRect, FALSE);
         }
         break;
@@ -234,13 +213,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
-        HDC hdc = BeginPaint(hWnd, &ps);
+        window.context = BeginPaint(hWnd, &ps);
 
         // Отрисовываем только необходимые области
         for (int i = 0; i < ps.rcPaint.bottom; i++) {
             // Если область перерисовки включает фон
             if (ps.rcPaint.top <= i && i < ps.rcPaint.bottom) {
-                DrawBackground(hdc, window.width, window.height, BackGround_bmp);
+                DrawBackground(window.context, window.width, window.height, BackGround_bmp);
                 break;
             }
         }
@@ -254,13 +233,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         };
 
        
-            Exit.Show(hdc);
-       
+        Exit.Show(window.context, false);
+        //Exit.Show(window.context);
 
         EndPaint(hWnd, &ps);
     }
-    break;
-
     break;
     
     case WM_COMMAND:
@@ -283,13 +260,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
    
     case WM_DESTROY:
         PostQuitMessage(0);
-        break;
+        break;  
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE) {
             DestroyWindow(hWnd);
         }
         return 0;
-
+    case WM_LBUTTONDOWN:
+        DestroyWindow(hWnd);
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }

@@ -19,43 +19,8 @@ public:
     }
 };
 Mouse_ Mouse;
+
 //=============================================================================||
-
-//class Button {
-//public:
-//
-//    float x, y, width, height;
-//    HBITMAP hBitmap;
-//    HBITMAP hBitmapGlow;
-//
-//    bool CheckCollisionMouse() {
-//        return Mouse.x < x + width && Mouse.x > x && Mouse.y < y + height && Mouse.y > y;
-//    }
-//    void Load(const char* imagename, const char* imagenameglow, float x_, float y_, float w, float h) {
-//        x = x_; y = y_;
-//        hBitmap = LoadBMP(imagename);
-//        hBitmapGlow = LoadBMP(imagenameglow);
-//        height = h; // *window.height
-//        width = w; // *window.width;
-//        x = x;  // window.width / 2 - width *
-//        y = y;  // window.height / 2 + height*
-//    }
-//
-//    bool Show(int x, int y) {
-//        bool pw_collision = CheckCollisionMouse();
-//
-//        ShowBitmap(x, y, width, height, pw_collision ? hBitmapGlow : hBitmap, false);
-//        return pw_collision;
-//    }
-//    bool Mouse_Move() {
-//        while (CheckCollisionMouse() && Mouse.L_butt) {
-//            x = Mouse.x;
-//            y = Mouse.y;
-//        }
-//        return 1;
-//    }
-//};
-
 
 class Button {
 public:
@@ -79,8 +44,6 @@ public:
         width = w;
     }
 
-   
-
     void StartDragging() {
         if (CheckCollisionMouse() && Mouse.R_butt) {
             isDragging = true;
@@ -98,39 +61,39 @@ public:
             isDragging = false;
         }
     }
-   void Show(HDC hdc) {
+
+   void Show(HDC hdc, bool alpha) {
         // Определяем, какой битмап использовать
         HBITMAP currentBitmap = (isHovered || isDragging) ? hBitmapGlow : hBitmap;
         
-        // Отрисовываем кнопку
+        
         HDC hdcMem = CreateCompatibleDC(hdc);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, currentBitmap);
-        
         BITMAP bm;
-        GetObject(currentBitmap, sizeof(BITMAP), &bm);
+        if (hOldBitmap) {
+           GetObject(currentBitmap, sizeof(BITMAP), &bm);
+            if (alpha) {
+                    TransparentBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, RGB(0, 0, 0));
+            }
+            else {
+                    StretchBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, SRCCOPY);
+            }
+            SelectObject(hdcMem, hOldBitmap);
+        }
         
-        // Используем TransparentBlt для поддержки прозрачности, если нужно
-        TransparentBlt(hdc, x, y, width, height,
-                      hdcMem, 0, 0, bm.bmWidth, bm.bmHeight,
-                      RGB(255, 0, 255)); // Цвет, который должен быть прозрачным
-        
-        SelectObject(hdcMem, hOldBitmap);
         DeleteDC(hdcMem);
     }
 };
 
-
-
-
-
-
-
-
 Button Exit;
 HBITMAP Exit_bmp;
+
+//=============================================================================||
 
 struct Player_ { //TOGO
   
 };
 
 Player_ player;
+
+//=============================================================================||
