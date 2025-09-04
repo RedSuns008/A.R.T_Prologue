@@ -91,9 +91,60 @@ HBITMAP Exit_bmp;
 //=============================================================================||
 
 struct Player_ { //TOGO
-  
+    int x, y, width, height, speed;
+    HBITMAP hBitmap;
+    bool isDragging = false;
+    bool isHovered = false;
+    float dragOffsetX = 0;
+    float dragOffsetY = 0;
+    
+    bool CheckCollisionMouse() {
+        return Mouse.x < x + width && Mouse.x > x && Mouse.y < y + height && Mouse.y > y;
+    }
+    void StartDragging() {
+        if (CheckCollisionMouse() && Mouse.R_butt) {
+            isDragging = true;
+            dragOffsetX = Mouse.x - x;
+            dragOffsetY = Mouse.y - y;
+        }
+    }
+
+    void UpdateDragging() {
+        if (isDragging && Mouse.R_butt) {
+            x = Mouse.x - dragOffsetX;
+            y = Mouse.y - dragOffsetY;
+        }
+        else {
+            isDragging = false;
+        }
+    }
+
+    void Load(const char* imagename, const char* imagenameglow, float x_, float y_, float w, float h) {
+        x = x_; y = y_;
+        hBitmap = LoadBMP(imagename);
+        height = h;
+        width = w;
+    }
+    void Show(HDC hdc, bool alpha) {
+        HDC hdcMem = CreateCompatibleDC(hdc);
+        HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, hBitmap);
+        BITMAP bm;
+        if (hOldBitmap) {
+            GetObject(hBitmap, sizeof(BITMAP), &bm);
+            if (alpha) {
+                TransparentBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, RGB(0, 0, 0));
+            }
+            else {
+                StretchBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, SRCCOPY);
+            }
+            SelectObject(hdcMem, hOldBitmap);
+        }
+
+        DeleteDC(hdcMem);
+    }
+
 };
 
 Player_ player;
-
+HBITMAP player_bmp;
 //=============================================================================||

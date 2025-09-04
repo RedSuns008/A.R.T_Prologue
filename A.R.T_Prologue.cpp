@@ -15,7 +15,7 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HBITMAP BackGround_bmp;
-
+ 
 //------------------------------------------------------------------------------//
 
 
@@ -25,6 +25,16 @@ BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 //------------------------------------------------------------------------------//
+
+void ProcessInput()
+{
+    if (GetAsyncKeyState(VK_LEFT)) player.x -= player.speed;
+    if (GetAsyncKeyState(VK_RIGHT)) player.x += player.speed;
+    if (GetAsyncKeyState(VK_UP)) player.y -= player.speed;
+    if (GetAsyncKeyState(VK_DOWN)) player.y += player.speed;
+}
+
+
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int  nCmdShow)
 {
@@ -37,12 +47,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
     window.context = CreateCompatibleDC(hdcScreen);
     window.width = GetSystemMetrics(SM_CXSCREEN);
     window.height = GetSystemMetrics(SM_CYSCREEN);
+    player.speed = 10;
+    player.x = window.width / 2.;//ракетка посередине окна
+    player.y = window.height/ 2;
+    
+
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_ARTPROLOGUE, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
     Exit.Load("exit_butt.bmp", "exit_butt_glow.bmp", 100, 100, 150, 50);
+    player.Load("exit_butt.bmp", "exit_butt.bmp", player.x, player.y, 50, 50);
     BackGround_bmp = (HBITMAP)LoadImageA(NULL, "phon1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow))
@@ -60,7 +76,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             Mouse.Update();
-
+            ProcessInput();
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
@@ -143,9 +159,7 @@ void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
     BITMAP bm;
     GetObject(hBitmap, sizeof(BITMAP), &bm);
 
-    StretchBlt(hdc, 0, 0, width, height,
-        hdcMem, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY
-    );
+    StretchBlt(hdc, 0, 0, width, height, hdcMem, 0, 0, bm.bmWidth, bm.bmHeight, SRCCOPY);
 
     SelectObject(hdcMem, hOldBitmap);
     DeleteDC(hdcMem);
@@ -225,17 +239,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         // Отрисовываем кнопку, если она в области перерисовки
-        RECT buttonRect = {
-            (LONG)Exit.x,
-            (LONG)Exit.y,
-            (LONG)(Exit.x + Exit.width),
-            (LONG)(Exit.y + Exit.height)
-        };
+        RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
 
        
         Exit.Show(window.context, false);
+        player.Show(window.context, false);
         //Exit.Show(window.context);
-
+        ProcessInput();
         EndPaint(hWnd, &ps);
     }
     break;
@@ -267,7 +277,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         return 0;
     case WM_LBUTTONDOWN:
-        DestroyWindow(hWnd);
+        if (Exit.CheckCollisionMouse()) {
+            DestroyWindow(hWnd);
+        }
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
