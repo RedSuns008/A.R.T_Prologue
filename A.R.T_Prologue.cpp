@@ -26,13 +26,14 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 //------------------------------------------------------------------------------//
 
-void ProcessInput()
-{
-    if (GetAsyncKeyState(VK_LEFT)) player.x -= player.speed;
-    if (GetAsyncKeyState(VK_RIGHT)) player.x += player.speed;
-    if (GetAsyncKeyState(VK_UP)) player.y -= player.speed;
-    if (GetAsyncKeyState(VK_DOWN)) player.y += player.speed;
+void ShowInventory() {
+    //if (Inventory.CheckCollisionMouse()) {
+        //ShowBitmap(Inventory.x, Inventory.y, Inventory.width, Inventory.height, Inventory.hBitmap, true);
+    ShowBitmap(1500, 1000, 100, 100, Inventory.hBitmap, true);
+
+    //}
 }
+
 
 
 
@@ -58,7 +59,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
     LoadStringW(hInstance, IDC_ARTPROLOGUE, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
     Exit.Load("exit_butt.bmp", "exit_butt_glow.bmp", 100, 100, 150, 50);
-    player.Load("exit_butt.bmp", "exit_butt.bmp", player.x, player.y, 50, 50);
+    player.Load("exit_butt.bmp", player.x, player.y, 50,50, 10);
+    Inventory.Load("exit_butt.bmp", "exit_butt_glow.bmp", 1500, 1000, 100, 100);
     BackGround_bmp = (HBITMAP)LoadImageA(NULL, "phon1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow))
@@ -73,16 +75,28 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
     // Main message loop:
     while (GetMessage(&msg, nullptr, 0, 0))
     {
+
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             Mouse.Update();
-            ProcessInput();
+            player.prevX = player.x;
+            player.prevY = player.y;
+
+            player.ProcessInput();
+
+            // Если игрок движется, перерисовываем только измененные области
+            if (player.isMoving) {
+                RECT prevRect = player.GetPrevRect();
+                RECT currentRect = player.GetRect();
+
+                InvalidateRect(window.hWnd, &prevRect, FALSE);
+                InvalidateRect(window.hWnd, &currentRect, FALSE);
+            }
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+            
         }
     }
-
-    return (int) msg.wParam;
 }
 
 
@@ -170,7 +184,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
- 
     case WM_RBUTTONDOWN:
         Exit.StartDragging();
         if (Exit.isDragging) {
@@ -182,12 +195,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
     {
+       
+
+
+
         // Обновляем позицию мыши
         POINT pt = { LOWORD(lParam), HIWORD(lParam) };
         Mouse.x = (float)pt.x;
         Mouse.y = (float)pt.y;
 
       
+
         bool wasHovered = Exit.isHovered;    // Обновляем состояние наведения
         Exit.isHovered = Exit.CheckCollisionMouse();
 
@@ -241,17 +259,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         // Отрисовываем кнопку, если она в области перерисовки
         RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
 
+        //Exit.Show(window.context);
        
         Exit.Show(window.context, false);
-        player.Show(window.context, false);
-        //Exit.Show(window.context);
-        ProcessInput();
+        player.Show();
+        ShowInventory();
+       
         EndPaint(hWnd, &ps);
     }
     break;
-    
+    case WM_TIMER:
+        SetTimer(hWnd, 1, 16, NULL);
+        player.ProcessInput();
+        if (player.isMoving) {
+            RECT prevRect = player.GetPrevRect();
+            RECT currentRect = player.GetRect();
+            InvalidateRect(hWnd, &prevRect, FALSE);
+            InvalidateRect(hWnd, &currentRect, FALSE);
+        }
+        break;
     case WM_COMMAND:
         {
+
             int wmId = LOWORD(wParam);
             // Parse the menu selections:
             switch (wmId)
@@ -272,6 +301,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         PostQuitMessage(0);
         break;  
     case WM_KEYDOWN:
+        ;
         if (wParam == VK_ESCAPE) {
             DestroyWindow(hWnd);
         }

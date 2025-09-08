@@ -82,68 +82,94 @@ public:
         }
         
         DeleteDC(hdcMem);
-    }
+   }
+
+
+  
+
 };
 
-Button Exit;
-HBITMAP Exit_bmp;
+Button Exit, Inventory;
+HBITMAP Exit_bmp, Inventory_bmp;
 
 //=============================================================================||
 
-struct Player_ { //TOGO
-    int x, y, width, height, speed;
+
+#include <cmath>
+struct Player_ {
+    int x, y, width, height, speed, prevX, prevY;
     HBITMAP hBitmap;
-    bool isDragging = false;
-    bool isHovered = false;
-    float dragOffsetX = 0;
-    float dragOffsetY = 0;
+    bool isMoving = false;
     
     bool CheckCollisionMouse() {
         return Mouse.x < x + width && Mouse.x > x && Mouse.y < y + height && Mouse.y > y;
     }
-    void StartDragging() {
-        if (CheckCollisionMouse() && Mouse.R_butt) {
-            isDragging = true;
-            dragOffsetX = Mouse.x - x;
-            dragOffsetY = Mouse.y - y;
-        }
-    }
-
-    void UpdateDragging() {
-        if (isDragging && Mouse.R_butt) {
-            x = Mouse.x - dragOffsetX;
-            y = Mouse.y - dragOffsetY;
-        }
-        else {
-            isDragging = false;
-        }
-    }
-
-    void Load(const char* imagename, const char* imagenameglow, float x_, float y_, float w, float h) {
-        x = x_; y = y_;
+  
+    void Load(const char* imagename, int x_, int y_, int w, int h, int s) {
+        x = x_;
+        y = y_;
         hBitmap = LoadBMP(imagename);
         height = h;
         width = w;
+        speed = s;
     }
-    void Show(HDC hdc, bool alpha) {
-        HDC hdcMem = CreateCompatibleDC(hdc);
-        HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, hBitmap);
-        BITMAP bm;
-        if (hOldBitmap) {
-            GetObject(hBitmap, sizeof(BITMAP), &bm);
-            if (alpha) {
-                TransparentBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, RGB(0, 0, 0));
-            }
-            else {
-                StretchBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, SRCCOPY);
-            }
-            SelectObject(hdcMem, hOldBitmap);
-        }
 
-        DeleteDC(hdcMem);
+    void Show() {
+        ShowBitmap(x, y, width, height, hBitmap, true);
     }
+  
+
+    void ProcessInput() {
+        prevX = x;
+        prevY = y;
+        // Вектор движения
+        int moveX = 0;
+        int moveY = 0;
+
+        // Проверяем все клавиши независимо
+        if (GetAsyncKeyState('W') & 0x8000) moveY -= speed;
+        if (GetAsyncKeyState('S') & 0x8000) moveY += speed;
+        if (GetAsyncKeyState('A') & 0x8000) moveX -= speed;
+        if (GetAsyncKeyState('D') & 0x8000) moveX += speed;
+
+        // Применяем движение, если есть хотя бы одно направление
+        if (moveX != 0 || moveY != 0) {
+            x += moveX;
+            y += moveY;
+            isMoving = true;
+
+            // Ограничение движения по границам экрана
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
+            if (x > window.width - width) x = window.width - width;
+            if (y > window.height - height) y = window.height - height;
+        }
+        else {
+            isMoving = false;
+        }
+    }
+public:
+    RECT GetRect() const {
+        return { x, y, x + width, y + height };
+    }
+
+    RECT GetPrevRect() const {
+        return { prevX, prevY, prevX + width, prevY + height };
+    }
+
+    // Дополнительный метод для обработки столкновений с другими объектами
+    bool CheckCollision(const Player_ & other) {
+        return x < other.x + other.width &&
+            x + width > other.x &&
+            y < other.y + other.height &&
+            y + height > other.y;
+    }
+
+   
 
 };
+
+
 
 Player_ player;
 HBITMAP player_bmp;
