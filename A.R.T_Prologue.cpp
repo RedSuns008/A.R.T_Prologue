@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------//
 #pragma comment(lib, "Msimg32.lib")
 #include "framework.h"
+#include"cstdio"
 #include "A.R.T_Prologue.h"
 #define MAX_LOADSTRING 100
 //------------------------------------------------------------------------------//
@@ -15,7 +16,8 @@ HINSTANCE hInst;                                // current instance
 WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HBITMAP BackGround_bmp;
- 
+static int counter = 0;
+char debugMsg[100];
 //------------------------------------------------------------------------------//
 
 
@@ -43,7 +45,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-
+  
     HDC hdcScreen = GetDC(window.hWnd);
     window.context = CreateCompatibleDC(hdcScreen);
     window.width = GetSystemMetrics(SM_CXSCREEN);
@@ -51,6 +53,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
     player.speed = 10;
     player.x = window.width / 2.;//ракетка посередине окна
     player.y = window.height/ 2;
+
     
 
 
@@ -67,7 +70,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
     {
         return FALSE;
     }
-
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ARTPROLOGUE));
 
     MSG msg;
@@ -82,16 +84,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
             player.prevX = player.x;
             player.prevY = player.y;
 
-            player.ProcessInput();
+            //player.ProcessInput();
 
-            // Если игрок движется, перерисовываем только измененные области
-            if (player.isMoving) {
-                RECT prevRect = player.GetPrevRect();
-                RECT currentRect = player.GetRect();
-
-                InvalidateRect(window.hWnd, &prevRect, FALSE);
-                InvalidateRect(window.hWnd, &currentRect, FALSE);
-            }
+            
             TranslateMessage(&msg);
             DispatchMessage(&msg);
             
@@ -151,6 +146,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(window.hWnd, nCmdShow);
    UpdateWindow(window.hWnd);
+   SetTimer(window.hWnd, 1, 16, NULL);
 
    return TRUE;
 }
@@ -177,6 +173,7 @@ void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
 
     SelectObject(hdcMem, hOldBitmap);
     DeleteDC(hdcMem);
+
 }   
 
 
@@ -184,6 +181,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+    case WM_TIMER:
+       
+        sprintf_s(debugMsg, "Timer called: %d\n", counter++);
+        OutputDebugStringA(debugMsg);
+
+        player.ProcessInput();
+        if (player.isMoving) {
+            RECT prevRect = player.GetPrevRect();
+            RECT currentRect = player.GetRect();
+            InvalidateRect(hWnd, &prevRect, FALSE);
+            InvalidateRect(hWnd, &currentRect, FALSE);
+        }
+        break;
     case WM_RBUTTONDOWN:
         Exit.StartDragging();
         if (Exit.isDragging) {
@@ -260,24 +270,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
 
         //Exit.Show(window.context);
-       
-        Exit.Show(window.context, false);
         player.Show();
+        Exit.Show(window.context, false);
+      
         ShowInventory();
        
         EndPaint(hWnd, &ps);
     }
     break;
-    case WM_TIMER:
-        SetTimer(hWnd, 1, 16, NULL);
-        player.ProcessInput();
-        if (player.isMoving) {
-            RECT prevRect = player.GetPrevRect();
-            RECT currentRect = player.GetRect();
-            InvalidateRect(hWnd, &prevRect, FALSE);
-            InvalidateRect(hWnd, &currentRect, FALSE);
-        }
-        break;
+  
     case WM_COMMAND:
         {
 
