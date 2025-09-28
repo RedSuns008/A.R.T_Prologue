@@ -1,5 +1,7 @@
 //------------------------------------------------------------------------------//
 #pragma comment(lib, "Msimg32.lib")
+#include <string>
+#include <sstream>
 #include "framework.h"
 #include"cstdio"
 #include "A.R.T_Prologue.h"
@@ -18,6 +20,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HBITMAP BackGround_bmp;
 static int counter = 0;
 char debugMsg[100];
+
 //------------------------------------------------------------------------------//
 
 
@@ -36,7 +39,23 @@ void ShowInventory() {
     //}
 }
 
+void InitMainMenu() {
+    HDC hdcScreen = GetDC(window.hWnd);
+    window.context = CreateCompatibleDC(hdcScreen);
+    window.width = GetSystemMetrics(SM_CXSCREEN);
+    window.height = GetSystemMetrics(SM_CYSCREEN);
+   
+    player.speed = 10;
+    player.x = window.width / 2.;//ракетка посередине окна
+    player.y = window.height / 2;
+    player.Load("exit_butt.bmp", player.x, player.y, 50, 50, 10);
+    
+    Exit.Load("exit_butt.bmp", "exit_butt_glow.bmp", 100, 100, 150, 50);
+    Inventory.Load("exit_butt.bmp", "exit_butt_glow.bmp", 1500, 1000, 100, 100);
+    BackGround_bmp = (HBITMAP)LoadImageA(NULL, "phon1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 
+
+}
 
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int  nCmdShow)
@@ -46,25 +65,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
 
     // TODO: Place code here.
   
-    HDC hdcScreen = GetDC(window.hWnd);
-    window.context = CreateCompatibleDC(hdcScreen);
-    window.width = GetSystemMetrics(SM_CXSCREEN);
-    window.height = GetSystemMetrics(SM_CYSCREEN);
-    player.speed = 10;
-    player.x = window.width / 2.;//ракетка посередине окна
-    player.y = window.height/ 2;
-
-    
+    InitMainMenu();
 
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
     LoadStringW(hInstance, IDC_ARTPROLOGUE, szWindowClass, MAX_LOADSTRING);
     MyRegisterClass(hInstance);
-    Exit.Load("exit_butt.bmp", "exit_butt_glow.bmp", 100, 100, 150, 50);
-    player.Load("exit_butt.bmp", player.x, player.y, 50,50, 10);
-    Inventory.Load("exit_butt.bmp", "exit_butt_glow.bmp", 1500, 1000, 100, 100);
-    BackGround_bmp = (HBITMAP)LoadImageA(NULL, "phon1.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     // Perform application initialization:
     if (!InitInstance (hInstance, nCmdShow))
     {
@@ -81,12 +88,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             Mouse.Update();
-            player.prevX = player.x;
-            player.prevY = player.y;
-
-            //player.ProcessInput();
-
-            
+         
             TranslateMessage(&msg);
             DispatchMessage(&msg);
             
@@ -163,7 +165,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // TODO
 void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
 {
-    HDC hdcMem = CreateCompatibleDC(window.context);
+    HDC hdcMem = CreateCompatibleDC(window.device_context);
     HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, hBitmap);
 
     BITMAP bm;
@@ -183,8 +185,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_TIMER:
        
-        sprintf_s(debugMsg, "Timer called: %d\n", counter++);
-        OutputDebugStringA(debugMsg);
+       /* sprintf_s(debugMsg, "Timer called: %d\n", counter++);
+        OutputDebugStringA(debugMsg);*/
 
         player.ProcessInput();
         if (player.isMoving) {
@@ -311,6 +313,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         if (Exit.CheckCollisionMouse()) {
             DestroyWindow(hWnd);
         }
+
+    case WM_CHAR: {
+
+        char c = (char)wParam;
+        std::stringstream ss;
+        ss << "Нажата клавиша: '" << c << "' (Код: " << (int)wParam << ")";
+        OutputDebugStringA(ss.str().c_str());
+        OutputDebugStringA("\n");
+        break;
+    }
+
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
