@@ -73,20 +73,16 @@ public:
         if (hOldBitmap) {
            GetObject(currentBitmap, sizeof(BITMAP), &bm);
             if (alpha) {
-                    TransparentBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, RGB(0, 0, 0));
+                    TransparentBlt(hdc, x, y, width, height, hdcMem, NULL, NULL, width, height, RGB(0, 0, 0));
             }
             else {
-                    StretchBlt(window.context, x, y, width, height, hdcMem, NULL, NULL, width, height, SRCCOPY);
+                    StretchBlt(hdc, x, y, width, height, hdcMem, NULL, NULL, width, height, SRCCOPY);
             }
             SelectObject(hdcMem, hOldBitmap);
         }
         
         DeleteDC(hdcMem);
    }
-
-
-  
-
 };
 
 Button Exit, Inventory;

@@ -41,12 +41,13 @@ void ShowInventory() {
 
 void InitMainMenu() {
     HDC hdcScreen = GetDC(window.hWnd);
-    window.context = CreateCompatibleDC(hdcScreen);
+    window.device_context = CreateCompatibleDC(hdcScreen); // хендл контекста устройтсва для рисования
     window.width = GetSystemMetrics(SM_CXSCREEN);
     window.height = GetSystemMetrics(SM_CYSCREEN);
+
    
-    player.speed = 10;
-    player.x = window.width / 2.;//ракетка посередине окна
+    player.speed = 20;
+    player.x = window.width / 2;
     player.y = window.height / 2;
     player.Load("exit_butt.bmp", player.x, player.y, 50, 50, 10);
     
@@ -148,7 +149,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(window.hWnd, nCmdShow);
    UpdateWindow(window.hWnd);
-   SetTimer(window.hWnd, 1, 16, NULL);
+   SetTimer(window.hWnd, 1, 10, NULL);
 
    return TRUE;
 }
@@ -165,7 +166,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 // TODO
 void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
 {
-    HDC hdcMem = CreateCompatibleDC(window.device_context);
+    HDC hdcMem = CreateCompatibleDC(hdc);
     HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, hBitmap);
 
     BITMAP bm;
@@ -257,7 +258,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_PAINT:
     {
         PAINTSTRUCT ps;
-        window.context = BeginPaint(hWnd, &ps);
+        window.device_context = BeginPaint(hWnd, &ps);
+
+
+        window.context = CreateCompatibleDC(window.device_context); // Второй буфер       
+        HBITMAP hbmMem = CreateCompatibleBitmap(window.device_context, window.width, window.height);
+        HBITMAP hbmOld = (HBITMAP)SelectObject(window.context, hbmMem);
 
         // Отрисовываем только необходимые области
         for (int i = 0; i < ps.rcPaint.bottom; i++) {
@@ -270,13 +276,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         // Отрисовываем кнопку, если она в области перерисовки
         RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
-
-        //Exit.Show(window.context);
         player.Show();
         Exit.Show(window.context, false);
-      
-        ShowInventory();
-       
+        //ShowInventory();
+        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);
+
+        SelectObject(window.context, hbmOld);
+        DeleteObject(hbmMem);
+        DeleteDC(window.context);
+
         EndPaint(hWnd, &ps);
     }
     break;

@@ -12,7 +12,7 @@ Window window;
 
 
     void ShowBitmap(int x, int y, int width, int height, HBITMAP hBitmap, bool alpha) {
-        HDC hMemDC = CreateCompatibleDC(window.device_context);
+        HDC hMemDC = CreateCompatibleDC(window.context);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
         BITMAP bm;
 
