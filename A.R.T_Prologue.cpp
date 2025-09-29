@@ -20,7 +20,7 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 HBITMAP BackGround_bmp;
 static int counter = 0;
 char debugMsg[100];
-
+static UINT_PTR gameTimerId = 0;
 //------------------------------------------------------------------------------//
 
 
@@ -31,13 +31,13 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 //------------------------------------------------------------------------------//
 
-void ShowInventory() {
-    //if (Inventory.CheckCollisionMouse()) {
-        //ShowBitmap(Inventory.x, Inventory.y, Inventory.width, Inventory.height, Inventory.hBitmap, true);
-    ShowBitmap(1500, 1000, 100, 100, Inventory.hBitmap, true);
-
-    //}
-}
+//void ShowInventory() {
+//    //if (Inventory.CheckCollisionMouse()) {
+//        //ShowBitmap(Inventory.x, Inventory.y, Inventory.width, Inventory.height, Inventory.hBitmap, true);
+//    ShowBitmap(1500, 1000, 100, 100, Inventory.hBitmap, true);
+//
+//    //}
+//}
 
 void InitMainMenu() {
     HDC hdcScreen = GetDC(window.hWnd);
@@ -149,7 +149,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    ShowWindow(window.hWnd, nCmdShow);
    UpdateWindow(window.hWnd);
-   SetTimer(window.hWnd, 1, 10, NULL);
+   gameTimerId = SetTimer(window.hWnd, 1, 5, NULL);
 
    return TRUE;
 }
@@ -185,73 +185,65 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_TIMER:
-       
-       /* sprintf_s(debugMsg, "Timer called: %d\n", counter++);
-        OutputDebugStringA(debugMsg);*/
 
-        player.ProcessInput();
-        if (player.isMoving) {
-            RECT prevRect = player.GetPrevRect();
-            RECT currentRect = player.GetRect();
-            InvalidateRect(hWnd, &prevRect, FALSE);
-            InvalidateRect(hWnd, &currentRect, FALSE);
-        }
+      
+            // Игровой таймер - обрабатываем ввод и перерисовываем
+            player.ProcessInput();
+
+            // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
+            if (player.isMoving || Exit.isDragging) {
+                InvalidateRect(hWnd, NULL, FALSE);
+                UpdateWindow(hWnd);
+            }
+        
         break;
+
     case WM_RBUTTONDOWN:
+        // Обновляем позицию мыши перед началом перетаскивания
+        Mouse.x = (float)LOWORD(lParam);
+        Mouse.y = (float)HIWORD(lParam);
+        Mouse.R_butt = true;
+
         Exit.StartDragging();
         if (Exit.isDragging) {
-            SetCapture(hWnd); // Захватываем мышь
-            
-            lastButtonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)}; // Запоминаем текущую позицию кнопки
+            InvalidateRect(hWnd, NULL, FALSE);
+            UpdateWindow(hWnd);
         }
         break;
 
     case WM_MOUSEMOVE:
     {
-       
-
-
-
-        // Обновляем позицию мыши
+        // Всегда обновляем позицию мыши
         POINT pt = { LOWORD(lParam), HIWORD(lParam) };
         Mouse.x = (float)pt.x;
         Mouse.y = (float)pt.y;
 
-      
-
-        bool wasHovered = Exit.isHovered;    // Обновляем состояние наведения
+        bool wasHovered = Exit.isHovered;
         Exit.isHovered = Exit.CheckCollisionMouse();
 
-        
-        if (Exit.isDragging) { // Обновляем перетаскивание если активно
-         
-            InvalidateRect(hWnd, &lastButtonRect, FALSE);    // Сначала инвалидируем старую область
-
+        if (Exit.isDragging) {
             Exit.UpdateDragging();
-
-            
-            lastButtonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};// Обновляем область для перерисовки
-
-            // Инвалидируем новую область
-            InvalidateRect(hWnd, &lastButtonRect, FALSE);
+            InvalidateRect(hWnd, NULL, FALSE);
+            UpdateWindow(hWnd);
         }
-        
-        else if (wasHovered != Exit.isHovered) {     // Если состояние наведения изменилось, перерисовываем кнопку
-            RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
-            InvalidateRect(hWnd, &buttonRect, FALSE);
+        else if (wasHovered != Exit.isHovered) {
+            InvalidateRect(hWnd, NULL, FALSE);
+            UpdateWindow(hWnd);
         }
-        break;
+
     }
 
     case WM_RBUTTONUP:
+        // Обновляем состояние мыши
+        Mouse.x = (float)LOWORD(lParam);
+        Mouse.y = (float)HIWORD(lParam);
+        Mouse.R_butt = false;
+
         if (Exit.isDragging) {
             Exit.isDragging = false;
-            ReleaseCapture(); // Освобождаем захват мыши
-
-            // Перерисовываем область кнопки
-            RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
-
-            InvalidateRect(hWnd, &buttonRect, FALSE);
+            ReleaseCapture();
+            InvalidateRect(hWnd, NULL, FALSE);
+            UpdateWindow(hWnd);
         }
         break;
 
@@ -264,19 +256,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         window.context = CreateCompatibleDC(window.device_context); // Второй буфер       
         HBITMAP hbmMem = CreateCompatibleBitmap(window.device_context, window.width, window.height);
         HBITMAP hbmOld = (HBITMAP)SelectObject(window.context, hbmMem);
+      
+        DrawBackground(window.context, window.width, window.height, BackGround_bmp);
 
-        // Отрисовываем только необходимые области
-        for (int i = 0; i < ps.rcPaint.bottom; i++) {
-            // Если область перерисовки включает фон
-            if (ps.rcPaint.top <= i && i < ps.rcPaint.bottom) {
-                DrawBackground(window.context, window.width, window.height, BackGround_bmp);
-                break;
-            }
-        }
-
-        // Отрисовываем кнопку, если она в области перерисовки
         RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
-        player.Show();
+        player.Show(window.context);
         Exit.Show(window.context, false);
         //ShowInventory();
         BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);

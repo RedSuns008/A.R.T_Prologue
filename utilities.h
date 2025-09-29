@@ -11,18 +11,18 @@ Window window;
 //------------------------------------------------------------------------------//
 
 
-    void ShowBitmap(int x, int y, int width, int height, HBITMAP hBitmap, bool alpha) {
-        HDC hMemDC = CreateCompatibleDC(window.context);
+void ShowBitmap(HDC hdc, int x, int y, int width, int height, HBITMAP hBitmap, bool alpha) {
+        HDC hMemDC = CreateCompatibleDC(hdc);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
         BITMAP bm;
 
         if (hOldBitmap) {
             GetObject(hBitmap, sizeof(HBITMAP), &bm);
             if (alpha) {
-                TransparentBlt(window.context, x, y, width, height, hMemDC, NULL, NULL, width, height, RGB(0, 0, 0));
+                TransparentBlt(hdc, x, y, width, height, hMemDC, NULL, NULL, width, height, RGB(0, 0, 0));
             }
             else {
-                StretchBlt(window.context, x, y, width, height, hMemDC, NULL, NULL, width, height, SRCCOPY);
+                StretchBlt(hdc, x, y, width, height, hMemDC, NULL, NULL, width, height, SRCCOPY);
             }
             SelectObject(hMemDC, hOldBitmap);
         }

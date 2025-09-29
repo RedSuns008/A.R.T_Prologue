@@ -1,7 +1,7 @@
 #pragma once
 // Global Variables//
 static bool needsRedraw = false;
-static RECT lastButtonRect = { 0 };
+
 
 //------------------------------------------------------------------------------//Mouse Class
 class Mouse_ {
@@ -45,17 +45,26 @@ public:
     }
 
     void StartDragging() {
-        if (CheckCollisionMouse() && Mouse.R_butt) {
+        if (CheckCollisionMouse()) {
             isDragging = true;
             dragOffsetX = Mouse.x - x;
             dragOffsetY = Mouse.y - y;
+            // Устанавливаем захват мыши сразу
+            SetCapture(window.hWnd);
         }
     }
 
     void UpdateDragging() {
-        if (isDragging && Mouse.R_butt) {
+        if (isDragging) {
+            // Используем уже обновленные координаты из структуры Mouse
             x = Mouse.x - dragOffsetX;
             y = Mouse.y - dragOffsetY;
+
+            // Ограничиваем движение кнопки границами экрана
+            if (x < 0) x = 0;
+            if (y < 0) y = 0;
+            if (x > window.width - width) x = window.width - width;
+            if (y > window.height - height) y = window.height - height;
         }
         else {
             isDragging = false;
@@ -110,8 +119,8 @@ struct Player_ {
         speed = s;
     }
 
-    void Show() {
-        ShowBitmap(x, y, width, height, hBitmap, true);
+    void Show(HDC hdc) {
+        ShowBitmap(hdc,x, y, width, height, hBitmap, true);
     }
   
 
