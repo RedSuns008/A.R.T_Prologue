@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------//
+п»ї//------------------------------------------------------------------------------//
 #pragma comment(lib, "Msimg32.lib")
 #include <string>
 #include <sstream>
@@ -41,7 +41,7 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 void InitMainMenu() {
     HDC hdcScreen = GetDC(window.hWnd);
-    window.device_context = CreateCompatibleDC(hdcScreen); // хендл контекста устройтсва для рисования
+    window.device_context = CreateCompatibleDC(hdcScreen); // С…РµРЅРґР» РєРѕРЅС‚РµРєСЃС‚Р° СѓСЃС‚СЂРѕР№С‚СЃРІР° РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ
     window.width = GetSystemMetrics(SM_CXSCREEN);
     window.height = GetSystemMetrics(SM_CYSCREEN);
 
@@ -66,7 +66,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
 
     // TODO: Place code here.
   
-    InitMainMenu();
+   InitMainMenu();
 
 
     // Initialize global strings
@@ -89,7 +89,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
         {
             Mouse.Update();
-         
+            if (Exit.isDragging) {
+                Exit.UpdateDragging();
+                InvalidateRect(window.hWnd, NULL, FALSE);
+            }
             TranslateMessage(&msg);
             DispatchMessage(&msg);
             
@@ -187,10 +190,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_TIMER:
 
       
-            // Игровой таймер - обрабатываем ввод и перерисовываем
+            // РРіСЂРѕРІРѕР№ С‚Р°Р№РјРµСЂ - РѕР±СЂР°Р±Р°С‚С‹РІР°РµРј РІРІРѕРґ Рё РїРµСЂРµСЂРёСЃРѕРІС‹РІР°РµРј
             player.ProcessInput();
 
-            // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
+            // Р•СЃР»Рё РёРіСЂРѕРє РґРІРёР¶РµС‚СЃСЏ РР›Р РєРЅРѕРїРєР° РїРµСЂРµС‚Р°СЃРєРёРІР°РµС‚СЃСЏ, РїРµСЂРµСЂРёСЃРѕРІС‹РІР°РµРј
             if (player.isMoving || Exit.isDragging) {
                 InvalidateRect(hWnd, NULL, FALSE);
                 UpdateWindow(hWnd);
@@ -199,42 +202,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_RBUTTONDOWN:
-        // Обновляем позицию мыши перед началом перетаскивания
         Mouse.x = (float)LOWORD(lParam);
         Mouse.y = (float)HIWORD(lParam);
         Mouse.R_butt = true;
-
         Exit.StartDragging();
-        if (Exit.isDragging) {
-            InvalidateRect(hWnd, NULL, FALSE);
-            UpdateWindow(hWnd);
-        }
         break;
 
     case WM_MOUSEMOVE:
     {
-        // Всегда обновляем позицию мыши
-        POINT pt = { LOWORD(lParam), HIWORD(lParam) };
-        Mouse.x = (float)pt.x;
-        Mouse.y = (float)pt.y;
+        Mouse.x = (float)LOWORD(lParam);
+        Mouse.y = (float)HIWORD(lParam);
 
-        bool wasHovered = Exit.isHovered;
+        // РћР±РЅРѕРІР»СЏРµРј СЃРѕСЃС‚РѕСЏРЅРёРµ РЅР°РІРµРґРµРЅРёСЏ
         Exit.isHovered = Exit.CheckCollisionMouse();
 
-        if (Exit.isDragging) {
-            Exit.UpdateDragging();
-            InvalidateRect(hWnd, NULL, FALSE);
-            UpdateWindow(hWnd);
-        }
-        else if (wasHovered != Exit.isHovered) {
-            InvalidateRect(hWnd, NULL, FALSE);
-            UpdateWindow(hWnd);
-        }
-
+        // РџРµСЂРµС‚Р°СЃРєРёРІР°РЅРёРµ С‚РµРїРµСЂСЊ РѕР±СЂР°Р±Р°С‚С‹РІР°РµС‚СЃСЏ РІ РіР»Р°РІРЅРѕРј С†РёРєР»Рµ
+        break;
     }
 
-    case WM_RBUTTONUP:
-        // Обновляем состояние мыши
+    case WM_RBUTTONUP:  
         Mouse.x = (float)LOWORD(lParam);
         Mouse.y = (float)HIWORD(lParam);
         Mouse.R_butt = false;
@@ -243,7 +229,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             Exit.isDragging = false;
             ReleaseCapture();
             InvalidateRect(hWnd, NULL, FALSE);
-            UpdateWindow(hWnd);
         }
         break;
 
@@ -253,7 +238,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         window.device_context = BeginPaint(hWnd, &ps);
 
 
-        window.context = CreateCompatibleDC(window.device_context); // Второй буфер       
+        window.context = CreateCompatibleDC(window.device_context); // Р’С‚РѕСЂРѕР№ Р±СѓС„РµСЂ       
         HBITMAP hbmMem = CreateCompatibleBitmap(window.device_context, window.width, window.height);
         HBITMAP hbmOld = (HBITMAP)SelectObject(window.context, hbmMem);
       
@@ -310,7 +295,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         char c = (char)wParam;
         std::stringstream ss;
-        ss << "Нажата клавиша: '" << c << "' (Код: " << (int)wParam << ")";
+        ss << "РќР°Р¶Р°С‚Р° РєР»Р°РІРёС€Р°: '" << c << "' (РљРѕРґ: " << (int)wParam << ")";
         OutputDebugStringA(ss.str().c_str());
         OutputDebugStringA("\n");
         break;
