@@ -1,6 +1,6 @@
-#pragma once
+п»ї#pragma once
 #include <windows.h>
-//------------------------------------------------------------------------------//Структура окна
+//------------------------------------------------------------------------------//РЎС‚СЂСѓРєС‚СѓСЂР° РѕРєРЅР°
 struct Window {
     HWND hWnd;
     HDC device_context;
@@ -12,6 +12,7 @@ Window window;
 
 
 void ShowBitmap(HDC hdc, int x, int y, int width, int height, HBITMAP hBitmap, bool alpha) {
+
         HDC hMemDC = CreateCompatibleDC(hdc);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBitmap);
         BITMAP bm;

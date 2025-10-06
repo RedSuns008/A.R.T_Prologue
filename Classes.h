@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 // Global Variables//
 static bool needsRedraw = false;
 
@@ -49,18 +49,18 @@ public:
             isDragging = true;
             dragOffsetX = Mouse.x - x;
             dragOffsetY = Mouse.y - y;
-            // Устанавливаем захват мыши сразу
+            // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј Р·Р°С…РІР°С‚ РјС‹С€Рё СЃСЂР°Р·Сѓ
             SetCapture(window.hWnd);
         }
     }
 
     void UpdateDragging() {
         if (isDragging) {
-            // Используем уже обновленные координаты из структуры Mouse
+            // РСЃРїРѕР»СЊР·СѓРµРј СѓР¶Рµ РѕР±РЅРѕРІР»РµРЅРЅС‹Рµ РєРѕРѕСЂРґРёРЅР°С‚С‹ РёР· СЃС‚СЂСѓРєС‚СѓСЂС‹ Mouse
             x = Mouse.x - dragOffsetX;
             y = Mouse.y - dragOffsetY;
 
-            // Ограничиваем движение кнопки границами экрана
+            // РћРіСЂР°РЅРёС‡РёРІР°РµРј РґРІРёР¶РµРЅРёРµ РєРЅРѕРїРєРё РіСЂР°РЅРёС†Р°РјРё СЌРєСЂР°РЅР°
             if (x < 0) x = 0;
             if (y < 0) y = 0;
             if (x > window.width - width) x = window.width - width;
@@ -72,13 +72,14 @@ public:
     }
 
    void Show(HDC hdc, bool alpha) {
-        // Определяем, какой битмап использовать
+        // РћРїСЂРµРґРµР»СЏРµРј, РєР°РєРѕР№ Р±РёС‚РјР°Рї РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ
         HBITMAP currentBitmap = (isHovered || isDragging) ? hBitmapGlow : hBitmap;
         
         
         HDC hdcMem = CreateCompatibleDC(hdc);
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hdcMem, currentBitmap);
         BITMAP bm;
+
         if (hOldBitmap) {
            GetObject(currentBitmap, sizeof(BITMAP), &bm);
             if (alpha) {
@@ -127,23 +128,23 @@ struct Player_ {
     void ProcessInput() {
         prevX = x;
         prevY = y;
-        // Вектор движения
+        // Р’РµРєС‚РѕСЂ РґРІРёР¶РµРЅРёСЏ
         int moveX = 0;
         int moveY = 0;
 
-        // Проверяем все клавиши независимо
+        // РџСЂРѕРІРµСЂСЏРµРј РІСЃРµ РєР»Р°РІРёС€Рё РЅРµР·Р°РІРёСЃРёРјРѕ
         if (GetAsyncKeyState('W') & 0x8000) moveY -= speed;
         if (GetAsyncKeyState('S') & 0x8000) moveY += speed;
         if (GetAsyncKeyState('A') & 0x8000) moveX -= speed;
         if (GetAsyncKeyState('D') & 0x8000) moveX += speed;
 
-        // Применяем движение, если есть хотя бы одно направление
+        // РџСЂРёРјРµРЅСЏРµРј РґРІРёР¶РµРЅРёРµ, РµСЃР»Рё РµСЃС‚СЊ С…РѕС‚СЏ Р±С‹ РѕРґРЅРѕ РЅР°РїСЂР°РІР»РµРЅРёРµ
         if (moveX != 0 || moveY != 0) {
             x += moveX;
             y += moveY;
             isMoving = true;
 
-            // Ограничение движения по границам экрана
+            // РћРіСЂР°РЅРёС‡РµРЅРёРµ РґРІРёР¶РµРЅРёСЏ РїРѕ РіСЂР°РЅРёС†Р°Рј СЌРєСЂР°РЅР°
             if (x < 0) x = 0;
             if (y < 0) y = 0;
             if (x > window.width - width) x = window.width - width;
@@ -162,7 +163,7 @@ public:
         return { prevX, prevY, prevX + width, prevY + height };
     }
 
-    // Дополнительный метод для обработки столкновений с другими объектами
+    // Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Р№ РјРµС‚РѕРґ РґР»СЏ РѕР±СЂР°Р±РѕС‚РєРё СЃС‚РѕР»РєРЅРѕРІРµРЅРёР№ СЃ РґСЂСѓРіРёРјРё РѕР±СЉРµРєС‚Р°РјРё
     bool CheckCollision(const Player_ & other) {
         return x < other.x + other.width &&
             x + width > other.x &&

@@ -103,18 +103,20 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
             if (player.isMoving) {
                 RECT prevRect = player.GetPrevRect();
                 RECT currentRect = player.GetRect();
+
+                // Добавляем небольшую область вокруг для полной очистки следов
+                InflateRect(&prevRect, 5, 5);
+                InflateRect(&currentRect, 5, 5);
+
                 InvalidateRect(window.hWnd, &prevRect, FALSE);
                 InvalidateRect(window.hWnd, &currentRect, FALSE);
-                needsRedraw = true;
             }
 
             if (Exit.isDragging) {
                 Exit.UpdateDragging();
-                RECT buttonRect = { (LONG)Exit.x, (LONG)Exit.y,
-                                  (LONG)(Exit.x + Exit.width),
-                                  (LONG)(Exit.y + Exit.height) };
+                RECT buttonRect = { (LONG)Exit.x, (LONG)Exit.y, (LONG)(Exit.x + Exit.width), (LONG)(Exit.y + Exit.height) };
+                InflateRect(&buttonRect, 5, 5); // Добавляем запас
                 InvalidateRect(window.hWnd, &buttonRect, FALSE);
-                needsRedraw = true;
             }
 
             // Обновление hover состояния
@@ -279,17 +281,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HBITMAP hbmMem = CreateCompatibleBitmap(window.device_context, window.width, window.height);
         HBITMAP hbmOld = (HBITMAP)SelectObject(window.context, hbmMem);
       
-
-        //RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
-
-
+        //отрисовка фона и объектов в буфер
         DrawBackground(window.context, window.width, window.height, BackGround_bmp);
         player.Show(window.context);
-        Exit.Show(window.context, false);
+        Exit.Show(window.context,false);
 
-
-        //BitBlt(window.device_context, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top, window.context, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
-       BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);
+        //копируем из буфера на экран
+        BitBlt(window.device_context, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top, window.context, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
+       
         
         
         // Очистка
@@ -303,7 +302,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   
     case WM_COMMAND:
         {
-
             int wmId = LOWORD(wParam);
             // Parse the menu selections:
             switch (wmId)
