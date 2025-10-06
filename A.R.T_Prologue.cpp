@@ -124,9 +124,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
             bool isHovered = Exit.CheckCollisionMouse();
             if (wasHovered != isHovered) {
                 Exit.isHovered = isHovered;
-                RECT buttonRect = { (LONG)Exit.x, (LONG)Exit.y,
-                                  (LONG)(Exit.x + Exit.width),
-                                  (LONG)(Exit.y + Exit.height) };
+                RECT buttonRect = { (LONG)Exit.x, (LONG)Exit.y, (LONG)(Exit.x + Exit.width), (LONG)(Exit.y + Exit.height) };
                 InvalidateRect(window.hWnd, &buttonRect, FALSE);
                 wasHovered = isHovered;
                 needsRedraw = true;
@@ -136,7 +134,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
                 UpdateWindow(window.hWnd);
             }
 
-            Sleep(1); // Снижаем нагрузку на CPU
+            Sleep(16); // Снижаем нагрузку на CPU
         }
     }
 }
