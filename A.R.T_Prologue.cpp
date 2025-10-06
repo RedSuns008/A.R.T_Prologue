@@ -81,21 +81,60 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,_In_opt_ HINSTANCE hPrevInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_ARTPROLOGUE));
 
     MSG msg;
+    bool isRunning = true;
 
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            Mouse.Update();
-            if (Exit.isDragging) {
-                Exit.UpdateDragging();
-                InvalidateRect(window.hWnd, NULL, FALSE);
+    while (isRunning) {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                isRunning = false;
             }
+
             TranslateMessage(&msg);
             DispatchMessage(&msg);
-            
+        }
+        else {
+            // Неблокирующая обработка ввода
+            Mouse.Update();
+            player.ProcessInput();
+
+            // Перерисовка при изменениях
+            bool needsRedraw = false;
+
+            if (player.isMoving) {
+                RECT prevRect = player.GetPrevRect();
+                RECT currentRect = player.GetRect();
+                InvalidateRect(window.hWnd, &prevRect, FALSE);
+                InvalidateRect(window.hWnd, &currentRect, FALSE);
+                needsRedraw = true;
+            }
+
+            if (Exit.isDragging) {
+                Exit.UpdateDragging();
+                RECT buttonRect = { (LONG)Exit.x, (LONG)Exit.y,
+                                  (LONG)(Exit.x + Exit.width),
+                                  (LONG)(Exit.y + Exit.height) };
+                InvalidateRect(window.hWnd, &buttonRect, FALSE);
+                needsRedraw = true;
+            }
+
+            // Обновление hover состояния
+            static bool wasHovered = false;
+            bool isHovered = Exit.CheckCollisionMouse();
+            if (wasHovered != isHovered) {
+                Exit.isHovered = isHovered;
+                RECT buttonRect = { (LONG)Exit.x, (LONG)Exit.y,
+                                  (LONG)(Exit.x + Exit.width),
+                                  (LONG)(Exit.y + Exit.height) };
+                InvalidateRect(window.hWnd, &buttonRect, FALSE);
+                wasHovered = isHovered;
+                needsRedraw = true;
+            }
+
+            if (needsRedraw) {
+                UpdateWindow(window.hWnd);
+            }
+
+            Sleep(1); // Снижаем нагрузку на CPU
         }
     }
 }
@@ -210,14 +249,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_MOUSEMOVE:
     {
-        Mouse.x = (float)LOWORD(lParam);
-        Mouse.y = (float)HIWORD(lParam);
+        POINT pt = { LOWORD(lParam), HIWORD(lParam) };
+        Mouse.x = (float)pt.x;
+        Mouse.y = (float)pt.y;
 
-        // Обновляем состояние наведения
-        Exit.isHovered = Exit.CheckCollisionMouse();
 
-        // Перетаскивание теперь обрабатывается в главном цикле
-        break;
+        break; 
     }
 
     case WM_RBUTTONUP:  
@@ -242,14 +279,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HBITMAP hbmMem = CreateCompatibleBitmap(window.device_context, window.width, window.height);
         HBITMAP hbmOld = (HBITMAP)SelectObject(window.context, hbmMem);
       
-        DrawBackground(window.context, window.width, window.height, BackGround_bmp);
 
-        RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
+        //RECT buttonRect = {(LONG)Exit.x,(LONG)Exit.y,(LONG)(Exit.x + Exit.width),(LONG)(Exit.y + Exit.height)};
+
+
+        DrawBackground(window.context, window.width, window.height, BackGround_bmp);
         player.Show(window.context);
         Exit.Show(window.context, false);
-        //ShowInventory();
-        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);
 
+
+        //BitBlt(window.device_context, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top, window.context, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
+       BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);
+        
+        
+        // Очистка
         SelectObject(window.context, hbmOld);
         DeleteObject(hbmMem);
         DeleteDC(window.context);
