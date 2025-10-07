@@ -279,8 +279,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         HBITMAP hbmMem = CreateCompatibleBitmap(window.device_context, window.width, window.height);
         HBITMAP hbmOld = (HBITMAP)SelectObject(window.context, hbmMem);
       
-        //отрисовка фона и объектов в буфер
-        DrawBackground(window.context, window.width, window.height, BackGround_bmp);
+        int paintArea = (ps.rcPaint.right - ps.rcPaint.left) * (ps.rcPaint.bottom - ps.rcPaint.top);
+        int totalArea = window.width * window.height;
+
+        if (paintArea > totalArea * 0.3) { // Если область больше 30% экрана
+            DrawBackground(window.context, window.width, window.height, BackGround_bmp);
+        }
+        else {
+            // Иначе рисуем фон только в области перерисовки
+            HDC hdcBkg = CreateCompatibleDC(window.context);
+            HBITMAP hOldBkg = (HBITMAP)SelectObject(hdcBkg, BackGround_bmp);
+
+            BitBlt(window.context, ps.rcPaint.left, ps.rcPaint.top,
+                ps.rcPaint.right - ps.rcPaint.left,
+                ps.rcPaint.bottom - ps.rcPaint.top,
+                hdcBkg, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
+
+            SelectObject(hdcBkg, hOldBkg);
+            DeleteDC(hdcBkg);
+        }
+
+        //отрисовываем обьекты в буфер
         player.Show(window.context);
         Exit.Show(window.context,false);
 
