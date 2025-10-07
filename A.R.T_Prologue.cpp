@@ -190,15 +190,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_TIMER:
 
       
-            // Игровой таймер - обрабатываем ввод и перерисовываем
-            player.ProcessInput();
-
-            // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
-            if (player.isMoving || Exit.isDragging) {
-                InvalidateRect(hWnd, NULL, FALSE);
-                UpdateWindow(hWnd);
-            }
-        
+       // Игровой таймер - обрабатываем ввод и перерисовываем
+       player.ProcessInput();
+      
+       // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
+       if (player.isMoving || Exit.isDragging) {
+           InvalidateRect(hWnd, NULL, FALSE);
+           UpdateWindow(hWnd);
+       }
+           sprintf_s(debugMsg, "Timer called: %d\n", counter++);
+           OutputDebugStringA(debugMsg);
         break;
 
     case WM_RBUTTONDOWN:
