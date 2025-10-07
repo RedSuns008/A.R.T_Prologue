@@ -121,7 +121,7 @@ struct Player_ {
     }
 
     void Show(HDC hdc) {
-        ShowBitmap(hdc,x, y, width, height, hBitmap, true);
+        ShowBitmap(hdc,x, y, width, height, hBitmap, false);
     }
   
 

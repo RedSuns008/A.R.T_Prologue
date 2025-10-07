@@ -49,7 +49,7 @@ void InitMainMenu() {
     player.speed = 20;
     player.x = window.width / 2;
     player.y = window.height / 2;
-    player.Load("exit_butt.bmp", player.x, player.y, 50, 50, 10);
+    player.Load("exit_butt.bmp", player.x, player.y, 100, 100, 20);
     
     Exit.Load("exit_butt.bmp", "exit_butt_glow.bmp", 100, 100, 150, 50);
     Inventory.Load("exit_butt.bmp", "exit_butt_glow.bmp", 1500, 1000, 100, 100);
@@ -246,14 +246,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_TIMER:
         // Игровой таймер - обрабатываем ввод и перерисовываем
-        player.ProcessInput();
-        
-        // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
-        if (player.isMoving || Exit.isDragging) {
-            InvalidateRect(hWnd, NULL, FALSE);
-            UpdateWindow(hWnd);
-        }
+        if (wParam == 1) {
 
+            InvalidateRect(hWnd, NULL, FALSE);
+
+            player.ProcessInput();
+
+            // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
+            if (player.isMoving || Exit.isDragging) {
+                UpdateWindow(hWnd);
+            }
+        }
         break;
 
     case WM_RBUTTONDOWN:
