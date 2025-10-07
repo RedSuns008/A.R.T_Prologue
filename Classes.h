@@ -128,15 +128,16 @@ struct Player_ {
     void ProcessInput() {
         prevX = x;
         prevY = y;
+
         // Вектор движения
         int moveX = 0;
         int moveY = 0;
 
         // Проверяем все клавиши независимо
-        if (GetAsyncKeyState('W') & 0x8000) moveY -= speed;
-        if (GetAsyncKeyState('S') & 0x8000) moveY += speed;
-        if (GetAsyncKeyState('A') & 0x8000) moveX -= speed;
-        if (GetAsyncKeyState('D') & 0x8000) moveX += speed;
+        if (GetAsyncKeyState('W')) moveY -= speed;
+        if (GetAsyncKeyState('S')) moveY += speed;
+        if (GetAsyncKeyState('A')) moveX -= speed;
+        if (GetAsyncKeyState('D')) moveX += speed;
 
         // Применяем движение, если есть хотя бы одно направление
         if (moveX != 0 || moveY != 0) {

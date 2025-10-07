@@ -197,15 +197,33 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 }
 
 
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE: Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
 
-// TODO
+void DrawDebugInfo(HDC hdc, const Player_& player, const Button& button) {
+   
+    HFONT hFont = CreateFont(20, 0, 0, 0, FW_NORMAL, TRUE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Arial"));// создаем логический шрифт для отрисовки текста
+    HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+
+    SetBkMode(hdc, TRANSPARENT);//фон под текстом прозрачен
+    SetTextColor(hdc, RGB(252, 252, 252)); // Белый текст
+
+    // Формируем строки с координатами
+    char debugText[512];
+    sprintf_s(debugText, "Игрок: X=%d Y=%d (Скорость: %d)\n" "Кнопка: X=%.0f Y=%.0f (Размер: %.0fx%.0f)\n"  "Мышь: X=%.0f Y=%.0f", player.x, player.y, player.speed, button.x, button.y, button.width, button.height, Mouse.x, Mouse.y);
+
+    // Разбиваем на строки и выводим с использованием strtok_s
+    char* next_token = nullptr;
+    char* line = strtok_s(debugText, "\n", &next_token);
+    int yPos = 10;
+    while (line != nullptr) {
+        TextOutA(hdc, 10, yPos, line, (int)strlen(line));
+        line = strtok_s(nullptr, "\n", &next_token);
+        yPos += 25;
+    }
+
+    SelectObject(hdc, hOldFont);
+    DeleteObject(hFont);
+}
+
 void DrawBackground(HDC hdc, int width, int height, HBITMAP hBitmap)
 {
     HDC hdcMem = CreateCompatibleDC(hdc);
@@ -227,17 +245,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_TIMER:
-
-      
-            // Игровой таймер - обрабатываем ввод и перерисовываем
-            player.ProcessInput();
-
-            // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
-            if (player.isMoving || Exit.isDragging) {
-                InvalidateRect(hWnd, NULL, FALSE);
-                UpdateWindow(hWnd);
-            }
+        // Игровой таймер - обрабатываем ввод и перерисовываем
+        player.ProcessInput();
         
+        // Если игрок движется ИЛИ кнопка перетаскивается, перерисовываем
+        if (player.isMoving || Exit.isDragging) {
+            InvalidateRect(hWnd, NULL, FALSE);
+            UpdateWindow(hWnd);
+        }
+
         break;
 
     case WM_RBUTTONDOWN:
@@ -278,30 +294,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         window.context = CreateCompatibleDC(window.device_context); // Второй буфер       
         HBITMAP hbmMem = CreateCompatibleBitmap(window.device_context, window.width, window.height);
         HBITMAP hbmOld = (HBITMAP)SelectObject(window.context, hbmMem);
-      
-        int paintArea = (ps.rcPaint.right - ps.rcPaint.left) * (ps.rcPaint.bottom - ps.rcPaint.top);
-        int totalArea = window.width * window.height;
-
-        if (paintArea > totalArea * 0.3) { // Если область больше 30% экрана
-            DrawBackground(window.context, window.width, window.height, BackGround_bmp);
-        }
-        else {
-            // Иначе рисуем фон только в области перерисовки
-            HDC hdcBkg = CreateCompatibleDC(window.context);
-            HBITMAP hOldBkg = (HBITMAP)SelectObject(hdcBkg, BackGround_bmp);
-
-            BitBlt(window.context, ps.rcPaint.left, ps.rcPaint.top,
-                ps.rcPaint.right - ps.rcPaint.left,
-                ps.rcPaint.bottom - ps.rcPaint.top,
-                hdcBkg, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
-
-            SelectObject(hdcBkg, hOldBkg);
-            DeleteDC(hdcBkg);
-        }
+        
+        DrawBackground(window.context, window.width, window.height, BackGround_bmp);
 
         //отрисовываем обьекты в буфер
         player.Show(window.context);
         Exit.Show(window.context,false);
+        DrawDebugInfo(window.context, player, Exit);
 
         //копируем из буфера на экран
         BitBlt(window.device_context, ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right - ps.rcPaint.left, ps.rcPaint.bottom - ps.rcPaint.top, window.context, ps.rcPaint.left, ps.rcPaint.top, SRCCOPY);
